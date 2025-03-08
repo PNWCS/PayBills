@@ -1,2 +1,14 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using System.Data;
+using PayBills_Lib;
+
+namespace PayBills
+{
+    public class Sample
+    {
+        public static void Main(string[] args)
+        {
+            Bill_Query.DoBillToPayQuery();
+        }
+
+    }
+}
