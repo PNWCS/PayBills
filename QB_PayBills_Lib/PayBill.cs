@@ -10,7 +10,7 @@
 
         public string VendorName { get; set; }
 
-        public DateTime PaymentDate {  get; set; }
+        public DateTime PaymentDate { get; set; }
 
         public string BankList { get; set; }
 
@@ -23,7 +23,7 @@
 
         public PayBill(string txnID, DateTime timeCreated, int txnNumber, string payeeListId, string vendorName, DateTime paymentDate, string bankList, string bankName, double checkAmount, List<AppliedBill> billsPaid)
         {
-            TxnID = txnID; 
+            TxnID = txnID;
             TimeCreated = timeCreated;
             TxnNumber = txnNumber;
             PayeeListId = payeeListId;
@@ -33,8 +33,8 @@
             BankName = bankName;
             CheckAmount = checkAmount;
             BillsPaid = billsPaid;
-                
-                
+
+
         }
     }
 }

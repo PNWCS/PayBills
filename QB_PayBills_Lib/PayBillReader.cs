@@ -1,15 +1,15 @@
 ﻿using QBFC16Lib;
 using Serilog;
 
-namespace QB_PayBills_Lib   
+namespace QB_PayBills_Lib
 {
     public class PayBillReader
     {
-        public static List<PayBill> QueryAllPayBills() 
+        public static List<PayBill> QueryAllPayBills()
         {
 
             List<PayBill> list = new List<PayBill>();
-        
+
             bool sessionBegun = false;
             bool connectionOpen = false;
             QBSessionManager sessionManager = null;
@@ -72,10 +72,10 @@ namespace QB_PayBills_Lib
 
         public static List<PayBill> WalkBillPaymentCheckQueryRs(IMsgSetResponse responseMsgSet)
         {
-            List<PayBill>  list = new List<PayBill>(); 
+            List<PayBill> list = new List<PayBill>();
             if (responseMsgSet == null) return list;
             IResponseList responseList = responseMsgSet.ResponseList;
-            if (responseList == null) return list  ;
+            if (responseList == null) return list;
             //if we sent only one request, there is only one response, we'll walk the list for this sample
             for (int i = 0; i < responseList.Count; i++)
             {
@@ -97,12 +97,12 @@ namespace QB_PayBills_Lib
                     }
                 }
             }
-            return list ;
+            return list;
         }
 
         public static List<PayBill> WalkBillPaymentCheckRet(IBillPaymentCheckRetList BillPaymentCheckRet)
         {
-            List<PayBill> list = new List<PayBill> ();
+            List<PayBill> list = new List<PayBill>();
             for (int i = 0; i < BillPaymentCheckRet.Count; i++)
             {
                 var bill = BillPaymentCheckRet.GetAt(i);
@@ -171,7 +171,7 @@ namespace QB_PayBills_Lib
                 List<AppliedBill> appliedBills = new List<AppliedBill>();
                 if (bill.AppliedToTxnRetList != null)
                 {
-                    
+
                     for (int j = 0; j < bill.AppliedToTxnRetList.Count; j++)
                     {
                         IAppliedToTxnRet AppliedToTxnRet = bill.AppliedToTxnRetList.GetAt(j);
@@ -188,7 +188,7 @@ namespace QB_PayBills_Lib
                         double Amount = 0;
                         if (AppliedToTxnRet.Amount != null)
                         {
-                             Amount = (double)AppliedToTxnRet.Amount.GetValue();
+                            Amount = (double)AppliedToTxnRet.Amount.GetValue();
                         }
 
                         AppliedBill appliedbill = new AppliedBill(TxnID, BalanceRemaining, Amount);
@@ -196,7 +196,7 @@ namespace QB_PayBills_Lib
                     }
                 }
 
-                        PayBill payBill = new PayBill(txnID,timeCreated,txnNumber,payeelistId,payeefullname,dateTime,banklist,bankname,amount,appliedBills);
+                PayBill payBill = new PayBill(txnID, timeCreated, txnNumber, payeelistId, payeefullname, dateTime, banklist, bankname, amount, appliedBills);
                 Console.WriteLine("Bill payement by Check");
                 Console.WriteLine("---------------------------------------------------");
                 Console.WriteLine($"Transaction Number : {txnNumber}");
