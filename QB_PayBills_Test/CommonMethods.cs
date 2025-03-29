@@ -1,7 +1,7 @@
 ﻿using QB_PayBills_CLI;
 using Serilog;
 
-namespace QB_PayBills_CLI
+namespace QB_PayBills_Test
 {
     public class CommonMethods
     {
