@@ -2,8 +2,9 @@ using System.Diagnostics;
 using Serilog;
 using QBFC16Lib;
 using static QB_PayBills_Test.CommonMethods; // Reuse or adapt your shared helpers
+using QB_PayBills_Lib;
 
-namespace QB_PayBill_Test
+namespace QB_PayBills_Test
 {
     [Collection("Sequential Tests")]
     public class PayBillReaderTests
@@ -119,9 +120,9 @@ namespace QB_PayBill_Test
                         DateTime.Today,
                         "BILL_200", // vendor invoice ref
                         memo: "101", // numeric
-                        expAcct1: "Utilities",
+                        expAcct1: "Chase",
                         amt1: utilAmt,
-                        expAcct2: "Computer and Internet Expenses",
+                        expAcct2: "Chase",
                         amt2: compAmt
                     );
                     createdBillTxnIDs.Add(billTxnID2);
@@ -155,7 +156,7 @@ namespace QB_PayBill_Test
                     string payTxnID1 = AddBillPaymentCheck(
                         qbSession,
                         payeeVendorListID: createdVendorListIDs[0],  // vendor #0
-                        bankAccount: "Checking",                     // The bank account from which we pay
+                        bankAccount: "Chase",                     // The bank account from which we pay
                         checkDate: DateTime.Today,
                         billTxnID: billTxnID1,
                         paymentAmount: billTotal1
@@ -177,7 +178,7 @@ namespace QB_PayBill_Test
                     string payTxnID2 = AddBillPaymentCheck(
                         qbSession,
                         payeeVendorListID: createdVendorListIDs[1],
-                        bankAccount: "Checking",
+                        bankAccount: "Chase",
                         checkDate: DateTime.Today,
                         billTxnID: billTxnID2,
                         paymentAmount: billTotal2
@@ -451,7 +452,7 @@ namespace QB_PayBill_Test
             IItemInventoryAdd itemAdd = request.AppendItemInventoryAddRq();
 
             itemAdd.Name.SetValue(partName);
-            itemAdd.IncomeAccountRef.FullName.SetValue("Sales");
+            itemAdd.IncomeAccountRef.FullName.SetValue("Chase");
             itemAdd.AssetAccountRef.FullName.SetValue("Inventory Asset");
             itemAdd.COGSAccountRef.FullName.SetValue("Cost of Goods Sold");
 
