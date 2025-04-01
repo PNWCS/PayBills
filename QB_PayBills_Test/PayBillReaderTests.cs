@@ -120,9 +120,9 @@ namespace QB_PayBills_Test
                         DateTime.Today,
                         "BILL_200", // vendor invoice ref
                         memo: "101", // numeric
-                        expAcct1: "Chase",
+                        expAcct1: "Utilities",
                         amt1: utilAmt,
-                        expAcct2: "Chase",
+                        expAcct2: "Computer and Internet Expenses",
                         amt2: compAmt
                     );
                     createdBillTxnIDs.Add(billTxnID2);
@@ -156,7 +156,7 @@ namespace QB_PayBills_Test
                     string payTxnID1 = AddBillPaymentCheck(
                         qbSession,
                         payeeVendorListID: createdVendorListIDs[0],  // vendor #0
-                        bankAccount: "Chase",                     // The bank account from which we pay
+                        bankAccount: "Checking",                     // The bank account from which we pay
                         checkDate: DateTime.Today,
                         billTxnID: billTxnID1,
                         paymentAmount: billTotal1
@@ -178,7 +178,7 @@ namespace QB_PayBills_Test
                     string payTxnID2 = AddBillPaymentCheck(
                         qbSession,
                         payeeVendorListID: createdVendorListIDs[1],
-                        bankAccount: "Chase",
+                        bankAccount: "Checking",
                         checkDate: DateTime.Today,
                         billTxnID: billTxnID2,
                         paymentAmount: billTotal2
@@ -452,7 +452,7 @@ namespace QB_PayBills_Test
             IItemInventoryAdd itemAdd = request.AppendItemInventoryAddRq();
 
             itemAdd.Name.SetValue(partName);
-            itemAdd.IncomeAccountRef.FullName.SetValue("Chase");
+            itemAdd.IncomeAccountRef.FullName.SetValue("Sales");
             itemAdd.AssetAccountRef.FullName.SetValue("Inventory Asset");
             itemAdd.COGSAccountRef.FullName.SetValue("Cost of Goods Sold");
 
