@@ -2,8 +2,9 @@ using System.Diagnostics;
 using Serilog;
 using QBFC16Lib;
 using static QB_PayBills_Test.CommonMethods; // Reuse or adapt your shared helpers
+using QB_PayBills_Lib;
 
-namespace QB_PayBill_Test
+namespace QB_PayBills_Test
 {
     [Collection("Sequential Tests")]
     public class PayBillReaderTests
