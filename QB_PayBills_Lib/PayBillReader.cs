@@ -168,6 +168,12 @@ namespace QB_PayBills_Lib
                 {
                     amount = (double)bill.Amount.GetValue();
                 }
+
+                string memo = "";
+                if (bill.Memo != null)
+                {
+                    memo = (string)bill.Memo.GetValue();
+                }
                 List<AppliedBill> appliedBills = new List<AppliedBill>();
                 if (bill.AppliedToTxnRetList != null)
                 {
@@ -203,6 +209,8 @@ namespace QB_PayBills_Lib
                 Console.WriteLine($"Time created : {timeCreated}");
                 Console.WriteLine($"Payee Name : {payeefullname}");
                 Console.WriteLine($"Transaction date : {dateTime}");
+                Console.WriteLine($"Transaction Id : {txnID}");
+                Console.WriteLine($"Memo : {memo}");
                 Console.WriteLine($"Bank Name : {bankname}");
                 Console.WriteLine($"Amount : {amount}");
                 Console.WriteLine("---------------------------------------------------");
