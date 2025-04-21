@@ -201,7 +201,7 @@ namespace QB_PayBills_Lib
                     }
                 }
 
-                PayBill payBill = new PayBill(txnID, timeCreated, txnNumber, payeelistId, payeefullname, PaymentDate, banklist, bankname,"", amount,"", appliedBills);
+                PayBill payBill = new PayBill(txnID, timeCreated, txnNumber, payeelistId, payeefullname, PaymentDate, banklist, bankname, "", amount, "", appliedBills);
                 Console.WriteLine("Bill payement by Check");
                 Console.WriteLine("---------------------------------------------------");
                 Console.WriteLine($"Transaction Id : {txnID}");
