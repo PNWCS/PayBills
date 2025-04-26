@@ -6,7 +6,7 @@ namespace QB_PayBills_Lib
 {
     public class PayBillAdder
     {
-        public static void AddPayBills(List<PayBill> bills)
+        public static List<PayBill> AddPayBills(List<PayBill> bills)
         {
             List<PayBill> list = new List<PayBill>();
             foreach (var bill in bills)
@@ -36,9 +36,11 @@ namespace QB_PayBills_Lib
                     sessionManager.CloseConnection();
                     connectionOpen = false;
 
-                    PayBill res = WalkBillPaymentCheckAddRs(responseMsgSet);
+                    List<PayBill> res = WalkBillPaymentCheckAddRs(responseMsgSet);
 
-                    bill.TxnID = res.TxnID;
+                    list.Add(res[0]);
+
+                    bill.TxnID = res[0].TxnID;
 
                     Console.WriteLine("------------------------------------");
                     Console.WriteLine("Successfully paid the payment bill");
@@ -55,6 +57,7 @@ namespace QB_PayBills_Lib
                         sessionManager.CloseConnection();
                 }
             }
+            return list;
         }
 
         public static void BuildBillPaymentCheckAddRq(IMsgSetRequest requestMsgSet, PayBill bill)
@@ -85,9 +88,9 @@ namespace QB_PayBills_Lib
             BillPaymentCheckAddRq.IncludeRetElementList.Add("TxnID");
         }
 
-        public static PayBill WalkBillPaymentCheckAddRs(IMsgSetResponse responseMsgSet)
+        public static List<PayBill> WalkBillPaymentCheckAddRs(IMsgSetResponse responseMsgSet)
         {
-            PayBill list = null;
+            List<PayBill> list = new List<PayBill>();
             if (responseMsgSet == null) return list;
             IResponseList responseList = responseMsgSet.ResponseList;
             if (responseList == null) return list;
@@ -101,7 +104,7 @@ namespace QB_PayBills_Lib
                     if ((ENResponseType)response.Type.GetValue() == ENResponseType.rtBillPaymentCheckAddRs)
                     {
                         IBillPaymentCheckRet result = (IBillPaymentCheckRet)response.Detail;
-                        list = WalkBillPaymentCheckRet(result);
+                        list.Add(WalkBillPaymentCheckRet(result));
                     }
                 }
             }
@@ -110,116 +113,32 @@ namespace QB_PayBills_Lib
 
         public static PayBill WalkBillPaymentCheckRet(IBillPaymentCheckRet ret)
         {
-            PayBill list = null;
-            var bill = ret;
-            if (ret == null) return list;
-            //Go through all the elements of IBillPaymentCheckRetList
-            //Get value of TxnID
-            String txnID = "";
-            if (bill.TxnID != null)
-            {
-                txnID = (string)bill.TxnID.GetValue();
-            }
-            //Get value of TimeCreated
-            DateTime timeCreated = DateTime.Now;
-            if (bill.TimeCreated != null)
-            {
-                timeCreated = (DateTime)bill.TimeCreated.GetValue();
-            }
-            //Get value of TxnNumber
-            int txnNumber = 0;
-            if (bill.TxnNumber != null)
-            {
-                txnNumber = (int)bill.TxnNumber.GetValue();
-            }
-            string payeelistId = "";
-            string payeefullname = "";
-            if (bill.PayeeEntityRef != null)
-            {
-                //Get value of ListID
-                if (bill.PayeeEntityRef.ListID != null)
-                {
-                    payeelistId = (string)bill.PayeeEntityRef.ListID.GetValue();
-                }
-                //Get value of FullName
-                if (bill.PayeeEntityRef.FullName != null)
-                {
-                    payeefullname = (string)bill.PayeeEntityRef.FullName.GetValue();
-                }
-            }
-            //Get value of TxnDate
-            DateTime PaymentDate = DateTime.Now;
-            if (bill.TxnDate != null)
-            {
-                PaymentDate = (DateTime)bill.TxnDate.GetValue();
-            }
-            string banklist = "";
-            string bankname = "";
-            if (bill.BankAccountRef != null)
-            {
-                //Get value of ListID
-                if (bill.BankAccountRef.ListID != null)
-                {
-                    banklist = (string)bill.BankAccountRef.ListID.GetValue();
-                }
-                //Get value of FullName
-                if (bill.BankAccountRef.FullName != null)
-                {
-                    bankname = (string)bill.BankAccountRef.FullName.GetValue();
-                }
-            }
-            //Get value of Amount
-            double amount = 0;
-            if (bill.Amount != null)
-            {
-                amount = (double)bill.Amount.GetValue();
-            }
-            string memo = "";
-            if (bill.Memo != null)
-            {
-                memo = (string)bill.Memo.GetValue();
-            }
+            if (ret == null) return null;
+
+            string txnID = ret.TxnID?.GetValue() ?? "";
+            DateTime timeCreated = ret.TimeCreated?.GetValue() ?? DateTime.Now;
+            int txnNumber = ret.TxnNumber?.GetValue() ?? 0;
+            string payeeListId = ret.PayeeEntityRef?.ListID?.GetValue() ?? "";
+            string payeeFullName = ret.PayeeEntityRef?.FullName?.GetValue() ?? "";
+            DateTime paymentDate = ret.TxnDate?.GetValue() ?? DateTime.Now;
+            string bankName = ret.BankAccountRef?.FullName?.GetValue() ?? "";
+            double amount = ret.Amount?.GetValue() ?? 0;
+
             List<AppliedBill> appliedBills = new List<AppliedBill>();
-            if (bill.AppliedToTxnRetList != null)
+            if (ret.AppliedToTxnRetList != null)
             {
-
-                for (int j = 0; j < bill.AppliedToTxnRetList.Count; j++)
+                for (int j = 0; j < ret.AppliedToTxnRetList.Count; j++)
                 {
-                    IAppliedToTxnRet AppliedToTxnRet = bill.AppliedToTxnRetList.GetAt(j);
-                    //Get value of TxnID
+                    IAppliedToTxnRet appliedTxn = ret.AppliedToTxnRetList.GetAt(j);
+                    string appliedTxnID = appliedTxn.TxnID?.GetValue() ?? "";
+                    double balanceRemaining = appliedTxn.BalanceRemaining?.GetValue() ?? 0;
+                    double appliedAmount = appliedTxn.Amount?.GetValue() ?? 0;
 
-                    string TxnID = (string)AppliedToTxnRet.TxnID.GetValue();
-                    //Get value of BalanceRemaining
-                    double BalanceRemaining = 0;
-                    if (AppliedToTxnRet.BalanceRemaining != null)
-                    {
-                        BalanceRemaining = (double)AppliedToTxnRet.BalanceRemaining.GetValue();
-                    }
-                    //Get value of Amount
-                    double Amount = 0;
-                    if (AppliedToTxnRet.Amount != null)
-                    {
-                        Amount = (double)AppliedToTxnRet.Amount.GetValue();
-                    }
-
-                    AppliedBill appliedbill = new AppliedBill(TxnID, BalanceRemaining, Amount);
-                    appliedBills.Add(appliedbill);
+                    appliedBills.Add(new AppliedBill(appliedTxnID, balanceRemaining, appliedAmount));
                 }
             }
 
-            list = new PayBill(txnID, timeCreated, txnNumber, payeelistId, payeefullname, PaymentDate, banklist, bankname, "", amount, "", appliedBills);
-            Console.WriteLine("Bill payement by Check");
-            Console.WriteLine("---------------------------------------------------");
-            Console.WriteLine($"Transaction Id :  ${txnID}");
-            Console.WriteLine($"Transaction Number : {txnNumber}");
-            Console.WriteLine($"Time created : {timeCreated}");
-            Console.WriteLine($"Payee Id :{payeelistId}");
-            Console.WriteLine($"Payee Name : {payeefullname}");
-            Console.WriteLine($"Transaction date : {PaymentDate}");
-            Console.WriteLine($"Bank Name : {bankname}");
-            Console.WriteLine($"Amount : {amount}");
-            Console.WriteLine("---------------------------------------------------");
-            return list;
+            return new PayBill(txnID, timeCreated, txnNumber, payeeListId, payeeFullName, paymentDate, "", bankName, "", amount, "", appliedBills);
         }
 
         public static List<OpenBills> QueryUnpaidBills()
