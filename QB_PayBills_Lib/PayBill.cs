@@ -30,6 +30,8 @@
 
         public List<AppliedBill> BillsPaid { get; set; }
 
+        public PayBillStatus Status { get; set; }
+
         public PayBill(string txnID, DateTime timeCreated, int txnNumber, string payeeListId, string vendorName, DateTime paymentDate, string bankListId, string bankName, string billTxnId, double checkAmount, string creditTxnId, List<AppliedBill> billsPaid)
         {
             TxnID = txnID;
@@ -44,7 +46,18 @@
             CheckAmount = checkAmount;
             CreditTxnID = creditTxnId;
             BillsPaid = billsPaid;
+            Status = PayBillStatus.Unknown;
         }
+    }
+
+    public enum PayBillStatus
+    {
+        Unknown, // When first read from the company excel or QB
+        Unchanged, // Exists in both but no changes
+        Different, // Exists in both but name is different
+        Added,     // Newly added to QB
+        FailedToAdd, // If adding to QB failed
+        MissingInFile  // Exists in the QB file but not in File
     }
 
     public class OpenBills
