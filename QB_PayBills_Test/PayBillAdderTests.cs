@@ -4,6 +4,8 @@ using System.Linq;
 using Xunit;
 using QBFC16Lib;
 using System.Diagnostics;  // For Debug.WriteLine if needed
+using QB_PayBills_Lib;
+using Serilog;
 
 namespace QB_PayBills_Test
 {
@@ -18,6 +20,8 @@ namespace QB_PayBills_Test
             var createdVendorNames = new List<string>();   // Store the random vendor names
             var createdBillTxnIDs = new List<string>();
             var createdPaymentTxnIDs = new List<string>();  // We expect new BillPaymentCheck TxnIDs
+            var createdCreditTxnIDs = new List<string>();  // We expect new VendorCredit TxnIDs
+            var createdVendorAccountIDs = new List<string>(); // Store the random vendor account IDs
             try
             {
                 // 1) Create some random Vendors
@@ -27,6 +31,14 @@ namespace QB_PayBills_Test
                     {
                         string vendName = "AdderTestVend_" + Guid.NewGuid().ToString("N").Substring(0, 6);
                         string vendListID = AddVendor(qbSession, vendName);
+                        Assert.False(string.IsNullOrWhiteSpace(vendListID), "Vendor ListID was not created.");
+
+                        string vendorAccountListID = AddVendorAccount(qbSession, vendName);
+                        Assert.False(string.IsNullOrWhiteSpace(vendorAccountListID), "Vendor Account ListID was not created.");
+                        createdVendorAccountIDs.Add(vendorAccountListID);
+                        string vendcreditID = AddVendorCredit(qbSession, vendName, vendListID);
+                        Assert.False(string.IsNullOrWhiteSpace(vendcreditID), "Vendor Credit TxnID was not created.");
+                        createdCreditTxnIDs.Add(vendcreditID);
                         createdVendorListIDs.Add(vendListID);
                         createdVendorNames.Add(vendName);
                     }
@@ -71,48 +83,52 @@ namespace QB_PayBills_Test
 
                 // 3) Build the PayBill objects we want to add. 
                 //    Initially, TxnID should be empty; the Adder sets it once inserted.
-                var payBillList = new List<PayBill>();
+                var payBillList = new List<QB_PayBills_Lib.PayBill>();
 
                 // For the first Bill
-                payBillList.Add(new PayBill(
-                    txnID: "",
-                    timeCreated: DateTime.MinValue,
-                    txnNumber: 0,
-                    payeeListId: createdVendorListIDs[0],      // must match Bill's Vendor
-                    vendorName: createdVendorNames[0],         // use the actual random vendor name
-                    paymentDate: DateTime.Today,
-                    bankList: "",                              // If your code references the bank by ListID, set it here
-                    bankName: "Checking",                      // The QB bank account name from which we pay
-                    checkAmount: billTotal1,
-                    billsPaid: new List<AppliedBill>
-                    {
-                        new AppliedBill
-                        {
-                            BillTxnID = billTxnID1,
-                            Amount = billTotal1
-                        }
-                    }
+                payBillList.Append(new QB_PayBills_Lib.PayBill(
+                txnID: "",
+                timeCreated: DateTime.MinValue,
+                txnNumber: 0,
+                payeeListId: createdVendorListIDs[0],
+                vendorName: createdVendorNames[0],
+                paymentDate: DateTime.Today,
+                bankListId: "",
+                bankName: "Checking",
+                billTxnId: createdBillTxnIDs[0],
+                checkAmount: 45.00,
+                creditTxnId: createdCreditTxnIDs[0],
+                billsPaid: new List<QB_PayBills_Lib.AppliedBill>
+                {
+                    new QB_PayBills_Lib.AppliedBill(
+                        txnID: createdBillTxnIDs[0],
+                        balanceRemaining: 0.00,
+                        amount: 82.00
+                    )
+                }
                 ));
 
                 // For the second Bill
-                payBillList.Add(new PayBill(
-                    txnID: "",
-                    timeCreated: DateTime.MinValue,
-                    txnNumber: 0,
-                    payeeListId: createdVendorListIDs[1],
-                    vendorName: createdVendorNames[1],
-                    paymentDate: DateTime.Today,
-                    bankList: "",
-                    bankName: "Checking",
-                    checkAmount: billTotal2,
-                    billsPaid: new List<AppliedBill>
-                    {
-                        new AppliedBill
-                        {
-                            BillTxnID = billTxnID2,
-                            Amount = billTotal2
-                        }
-                    }
+                payBillList.Append(new QB_PayBills_Lib.PayBill(
+                txnID: "",
+                timeCreated: DateTime.MinValue,
+                txnNumber: 0,
+                payeeListId: createdVendorListIDs[1],
+                vendorName: createdVendorNames[1],
+                paymentDate: DateTime.Today,
+                bankListId: "",
+                bankName: "Checking",
+                billTxnId: createdBillTxnIDs[1],
+                checkAmount: 82.00,
+                creditTxnId: createdCreditTxnIDs[1],
+                billsPaid: new List<QB_PayBills_Lib.AppliedBill>
+                {
+                    new QB_PayBills_Lib.AppliedBill(
+                        txnID: createdBillTxnIDs[1],
+                        balanceRemaining: 0.00,
+                        amount: 82.00
+                    )
+                }
                 ));
 
                 // 4) Call your library method under test
@@ -158,6 +174,23 @@ namespace QB_PayBills_Test
 
                 using (var qbSession = new QuickBooksSession(AppConfig.QB_APP_NAME))
                 {
+                    foreach (var creditTxnID in createdCreditTxnIDs)
+                    {
+                        DeleteVendorCredit(qbSession, creditTxnID);
+                    }
+                }
+
+                using (var qbSession = new QuickBooksSession(AppConfig.QB_APP_NAME))
+                {
+                    foreach (var vendorAccountListID in createdVendorAccountIDs)
+                    {
+                        DeleteVendorAccount(qbSession, vendorAccountListID);
+                    }
+                }
+
+
+                using (var qbSession = new QuickBooksSession(AppConfig.QB_APP_NAME))
+                {
                     foreach (var vendListID in createdVendorListIDs)
                     {
                         DeleteListObject(qbSession, vendListID, ENListDelType.ldtVendor);
@@ -174,9 +207,9 @@ namespace QB_PayBills_Test
         {
             IMsgSetRequest request = qbSession.CreateRequestSet();
             var bpQuery = request.AppendBillPaymentCheckQueryRq();
-            // We'll just search by TxnID:
+            // We'll just search by TxnID:  
             bpQuery.ORTxnQuery.TxnIDList.Add(txnID);
-            // Optionally, we can request line items or not:
+            // Optionally, we can request line items or not:  
             bpQuery.IncludeLineItems.SetValue(true);
 
             IMsgSetResponse response = qbSession.SendRequest(request);
@@ -186,26 +219,18 @@ namespace QB_PayBills_Test
             var firstResp = response.ResponseList.GetAt(0);
             if (firstResp.StatusCode != 0)
             {
-                // Could throw an exception or just return null
+                // Could throw an exception or just return null  
                 Debug.WriteLine($"QueryBillPaymentCheckByTxnID failed: {firstResp.StatusMessage}");
                 return null;
             }
 
-            // If success, parse out the BillPaymentCheckRet
+            // If success, parse out the BillPaymentCheckRet  
             var checkRetList = firstResp.Detail as IBillPaymentCheckRetList;
-            // It's possible there's no match or multiple. Typically, you'd expect 0 or 1.
-            if (checkRetList == null)
-                return null;
+            if (checkRetList == null || checkRetList.Count == 0)
+                return null; // No data returned  
 
-            // checkRetList doesn't have a .Count property like arrays, 
-            // because IBillPaymentCheckRetList is not a standard List<T>.
-            // For single returns, you can just do .GetAt(0) if Count>0.
-            if (checkRetList == null)
-                return null; // No data returned
-
-            // The BillPaymentCheckQuery in QuickBooks typically returns exactly 1 if TxnID matches
-            // or 0 if not found, but let's be safe:
-            return checkRetList;
+            // Return the first item in the list  
+            return checkRetList.GetAt(0);
         }
 
         //------------------------------------------------------------------------------
@@ -221,6 +246,41 @@ namespace QB_PayBills_Test
             IMsgSetResponse response = qbSession.SendRequest(request);
             return ExtractVendorListID(response);
         }
+
+        private string AddVendorAccount(QuickBooksSession qbSession, string vendorName)
+        {
+            IMsgSetRequest request = qbSession.CreateRequestSet();
+            IAccountAdd AccountAddRq = request.AppendAccountAddRq();
+
+            AccountAddRq.Name.SetValue(vendorName); // Set the account name
+            AccountAddRq.IsActive.SetValue(true);  // Mark the account as active
+            AccountAddRq.AccountType.SetValue(ENAccountType.atExpense); // Set the required AccountType (e.g., Expense)
+
+            IMsgSetResponse response = qbSession.SendRequest(request);
+            CheckForError(response, $"Adding Vendor Account: {vendorName}");
+            IAccountRet details = (IAccountRet)response.ResponseList.GetAt(0).Detail;
+            return details.ListID.GetValue();
+        }
+
+
+
+
+        private string AddVendorCredit(QuickBooksSession qbSession, string vendorName, string vendorListId)
+        {
+            IMsgSetRequest request = qbSession.CreateRequestSet();
+            IVendorCreditAdd vendAdd = request.AppendVendorCreditAddRq();
+            vendAdd.VendorRef.ListID.SetValue(vendorListId);
+            IExpenseLineAdd ExpenseLineAdd = vendAdd.ExpenseLineAddList.Append();
+            ExpenseLineAdd.AccountRef.FullName.SetValue(vendorName);
+            ExpenseLineAdd.Amount.SetValue(10000);
+
+
+            IMsgSetResponse response = qbSession.SendRequest(request);
+            return ExtractCreditTxnID(response);
+        }
+
+
+
 
         private string AddExpenseBillWithTwoLines(
             QuickBooksSession qbSession,
@@ -278,6 +338,28 @@ namespace QB_PayBills_Test
             CheckForError(resp, $"Deleting Bill TxnID: {txnID}");
         }
 
+        private void DeleteVendorCredit(QuickBooksSession qbSession, string txnID)
+        {
+            IMsgSetRequest request = qbSession.CreateRequestSet();
+            var delRq = request.AppendTxnDelRq();
+            delRq.TxnDelType.SetValue(ENTxnDelType.tdtVendorCredit);
+            delRq.TxnID.SetValue(txnID);
+
+            var resp = qbSession.SendRequest(request);
+            CheckForError(resp, $"Deleting VendorCredit TxnID: {txnID}");
+        }
+
+        private void DeleteVendorAccount(QuickBooksSession qbSession, string account)
+        {
+            IMsgSetRequest request = qbSession.CreateRequestSet();
+            var listDelRq = request.AppendListDelRq();
+            listDelRq.ListDelType.SetValue(ENListDelType.ldtAccount);
+            listDelRq.ListID.SetValue(account);
+
+            var resp = qbSession.SendRequest(request);
+            CheckForError(resp, $"Deleting Account {account}");
+        }
+
         private void DeleteListObject(QuickBooksSession qbSession, string listID, ENListDelType listDelType)
         {
             IMsgSetRequest request = qbSession.CreateRequestSet();
@@ -327,6 +409,24 @@ namespace QB_PayBills_Test
             return billRet.TxnID.GetValue();
         }
 
+
+        private string ExtractCreditTxnID(IMsgSetResponse resp)
+        {
+            var respList = resp.ResponseList;
+            if (respList == null || respList.Count == 0)
+                throw new Exception("No response from BillAdd.");
+
+            IResponse firstResp = respList.GetAt(0);
+            if (firstResp.StatusCode != 0)
+                throw new Exception($"CreditAdd failed: {firstResp.StatusMessage}");
+
+            var billRet = firstResp.Detail as IVendorCreditRet;
+            if (billRet == null)
+                throw new Exception("No IBillRet returned.");
+
+            return billRet.TxnID.GetValue();
+        }
+
         private void CheckForError(IMsgSetResponse resp, string context)
         {
             if (resp?.ResponseList == null || resp.ResponseList.Count == 0)
@@ -344,11 +444,10 @@ namespace QB_PayBills_Test
         }
     }
 
-
-    //--------------------------------------------------------------------------
-    // Example Model classes, if needed
-    // (In your scenario, these likely exist in a separate .cs file)
-    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------  
+    // Example Model classes, if needed  
+    // (In your scenario, these likely exist in a separate .cs file)  
+    //--------------------------------------------------------------------------  
     public class PayBill
     {
         public string TxnID { get; set; }
@@ -357,7 +456,7 @@ namespace QB_PayBills_Test
         public string PayeeListId { get; set; }
         public string VendorName { get; set; }
         public DateTime PaymentDate { get; set; }
-        public string BankList { get; set; }
+        public string BankListId { get; set; }
         public string BankName { get; set; }
         public double CheckAmount { get; set; }
         public List<AppliedBill> BillsPaid { get; set; }
@@ -369,9 +468,11 @@ namespace QB_PayBills_Test
             string payeeListId,
             string vendorName,
             DateTime paymentDate,
-            string bankList,
+            string bankListId,
             string bankName,
+            string billTxnId,
             double checkAmount,
+            string creditTxnId,
             List<AppliedBill> billsPaid
         )
         {
@@ -381,7 +482,7 @@ namespace QB_PayBills_Test
             PayeeListId = payeeListId;
             VendorName = vendorName;
             PaymentDate = paymentDate;
-            BankList = bankList;
+            BankListId = bankListId;
             BankName = bankName;
             CheckAmount = checkAmount;
             BillsPaid = billsPaid;
@@ -392,6 +493,6 @@ namespace QB_PayBills_Test
     {
         public string BillTxnID { get; set; } = "";
         public double Amount { get; set; }
-        // ... other fields as needed
+        // ... other fields as needed  
     }
 }

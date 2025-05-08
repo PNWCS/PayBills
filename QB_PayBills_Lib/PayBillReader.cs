@@ -142,10 +142,10 @@ namespace QB_PayBills_Lib
                     }
                 }
                 //Get value of TxnDate
-                DateTime dateTime = DateTime.Now;
+                DateTime PaymentDate = DateTime.Now;
                 if (bill.TxnDate != null)
                 {
-                    dateTime = (DateTime)bill.TxnDate.GetValue();
+                    PaymentDate = (DateTime)bill.TxnDate.GetValue();
                 }
                 string banklist = "";
                 string bankname = "";
@@ -167,6 +167,11 @@ namespace QB_PayBills_Lib
                 if (bill.Amount != null)
                 {
                     amount = (double)bill.Amount.GetValue();
+                }
+                string memo = "";
+                if (bill.Memo != null)
+                {
+                    memo = (string)bill.Memo.GetValue();
                 }
                 List<AppliedBill> appliedBills = new List<AppliedBill>();
                 if (bill.AppliedToTxnRetList != null)
@@ -196,13 +201,15 @@ namespace QB_PayBills_Lib
                     }
                 }
 
-                PayBill payBill = new PayBill(txnID, timeCreated, txnNumber, payeelistId, payeefullname, dateTime, banklist, bankname, amount, appliedBills);
+                PayBill payBill = new PayBill(txnID, timeCreated, txnNumber, payeelistId, payeefullname, PaymentDate, banklist, bankname, "", amount, "", appliedBills);
                 Console.WriteLine("Bill payement by Check");
                 Console.WriteLine("---------------------------------------------------");
+                Console.WriteLine($"Transaction Id : {txnID}");
                 Console.WriteLine($"Transaction Number : {txnNumber}");
                 Console.WriteLine($"Time created : {timeCreated}");
+                Console.WriteLine($"Payee Id :{payeelistId}");
                 Console.WriteLine($"Payee Name : {payeefullname}");
-                Console.WriteLine($"Transaction date : {dateTime}");
+                Console.WriteLine($"Transaction date : {PaymentDate}");
                 Console.WriteLine($"Bank Name : {bankname}");
                 Console.WriteLine($"Amount : {amount}");
                 Console.WriteLine("---------------------------------------------------");
