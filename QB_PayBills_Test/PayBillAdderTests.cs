@@ -488,11 +488,4 @@ namespace QB_PayBills_Test
             BillsPaid = billsPaid;
         }
     }
-
-    public class AppliedBill
-    {
-        public string BillTxnID { get; set; } = "";
-        public double Amount { get; set; }
-        // ... other fields as needed  
-    }
 }

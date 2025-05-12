@@ -37,14 +37,18 @@ namespace QB_PayBills_Lib
                     connectionOpen = false;
 
                     List<PayBill> res = WalkBillPaymentCheckAddRs(responseMsgSet);
+                    if (res.Count != 0)
+                    {
+                        res[0].Status = PayBillStatus.Added;
+                        list.Add(res[0]);
 
-                    list.Add(res[0]);
+                        bill.TxnID = res[0].TxnID;
 
-                    bill.TxnID = res[0].TxnID;
+                        Console.WriteLine("------------------------------------");
+                        Console.WriteLine("Successfully paid the payment bill");
+                        Console.WriteLine("------------------------------------");
+                    }
 
-                    Console.WriteLine("------------------------------------");
-                    Console.WriteLine("Successfully paid the payment bill");
-                    Console.WriteLine("------------------------------------");
                 }
                 catch (Exception e)
                 {
@@ -137,11 +141,10 @@ namespace QB_PayBills_Lib
                     appliedBills.Add(new AppliedBill(appliedTxnID, balanceRemaining, appliedAmount));
                 }
             }
-
             return new PayBill(txnID, timeCreated, txnNumber, payeeListId, payeeFullName, paymentDate, "", bankName, "", amount, "", appliedBills);
         }
 
-        public static List<OpenBills> QueryUnpaidBills()
+        public static List<OpenBills> QueryUnpaidBills(bool display)
         {
             List<OpenBills> openBills = new List<OpenBills>();
             int count = 1;
@@ -171,27 +174,27 @@ namespace QB_PayBills_Lib
                             string txnID = bill.TxnID?.GetValue();
                             string vendorName = bill.VendorRef?.FullName?.GetValue() ?? "Unknown Vendor";
                             double amountDue = bill.AmountDue.GetValue();
-
-                            Console.WriteLine("----- Open Bill -----");
-                            Console.WriteLine($"#{count++}");
-                            Console.WriteLine($"TxnID     : {txnID}");
-                            Console.WriteLine($"Vendor    : {vendorName}");
-                            Console.WriteLine($"AmountDue : {amountDue}");
-                            Console.WriteLine("---------------------");
-
+                            if (display)
+                            {
+                                Console.WriteLine("-------------------");
+                                Console.WriteLine($"Bill Number : {count++}");
+                                Console.WriteLine($"TxnID       : {txnID}");
+                                Console.WriteLine($"Vendor      : {vendorName}");
+                                Console.WriteLine($"AmountDue   : {amountDue}");
+                                Console.WriteLine("---------------------");
+                            }
                             openBills.Add(new OpenBills(txnID, vendorName, amountDue));
                         }
                     }
                 }
             }
-
             sessionManager.EndSession();
             sessionManager.CloseConnection();
 
             return openBills;
         }
 
-        public static void GetCreditTxnID()
+        public static string GetCreditTxnID(string vendorName)
         {
             QBSessionManager sessionManager = new QBSessionManager();
             IMsgSetRequest requestMsgSet = sessionManager.CreateMsgSetRequest("US", 16, 0);
@@ -218,14 +221,16 @@ namespace QB_PayBills_Lib
                         IVendorCreditRet credit = creditList.GetAt(j);
                         string creditTxnId = credit.TxnID?.GetValue();
                         string vendor = credit.VendorRef?.FullName?.GetValue() ?? "Unknown Vendor";
-
-                        Console.WriteLine($"Credit Found: TxnID = {creditTxnId}, Vendor = {vendor}");
+                        if (vendor.Equals(vendorName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return creditTxnId;
+                        }
                     }
                 }
             }
-
             sessionManager.EndSession();
             sessionManager.CloseConnection();
+            return null;
         }
     }
 }
