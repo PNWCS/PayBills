@@ -30,10 +30,10 @@ namespace QB_PayBills_Test
             ResetLogger();
 
             const int COMPANY_ID_START = 7000;   // arbitrary, unique for this test-run
-            var qbTxIdsToCleanup   = new List<string>(); // PayBill TxnIDs we create, delete later
+            var qbTxIdsToCleanup = new List<string>(); // PayBill TxnIDs we create, delete later
             var billTxIdsToCleanup = new List<string>(); // Bills to delete afterwards
-            string vendorListId    = string.Empty;
-            string vendorName      = $"TestVendor_{Guid.NewGuid():N}".Substring(0, 12);
+            string vendorListId = string.Empty;
+            string vendorName = $"TestVendor_{Guid.NewGuid():N}".Substring(0, 12);
 
             // (1a) Spin up a QB session so we can seed prerequisite data (vendor + 1 bill)
             using (var qb = new QuickBooksSession(AppConfig.QB_APP_NAME))
@@ -46,7 +46,7 @@ namespace QB_PayBills_Test
                                                 vendorListId,
                                                 vendorName,
                                                 amount: 123.45,
-                                                memo:   "Seed bill for PayBills test");
+                                                memo: "Seed bill for PayBills test");
                 billTxIdsToCleanup.Add(firstBillTxnId);
 
                 // ---------- 2. Build first in-memory company file ----------
@@ -77,7 +77,7 @@ namespace QB_PayBills_Test
                                                  vendorListId,
                                                  vendorName,
                                                  amount: 55.00,
-                                                 memo:   "Second bill for PayBills test");
+                                                 memo: "Second bill for PayBills test");
                 billTxIdsToCleanup.Add(secondBillTxnId);
 
                 var unchangedPb = BuildPayBill(secondBillTxnId, vendorName, bankAccount: GetBankAccount(qb));
@@ -167,7 +167,7 @@ namespace QB_PayBills_Test
         #endregion
 
 
-        private string AddBill(QuickBooksSession qbSession, string vendorListId, string vendorName , double amount, string memo )
+        private string AddBill(QuickBooksSession qbSession, string vendorListId, string vendorName, double amount, string memo)
         {
             IMsgSetRequest request = qbSession.CreateRequestSet();
             IBillAdd billAddRq = request.AppendBillAddRq();
@@ -183,14 +183,14 @@ namespace QB_PayBills_Test
 
         }
 
-        private (string,string) GetBankAccount(QuickBooksSession qbSession)
+        private (string, string) GetBankAccount(QuickBooksSession qbSession)
         {
             IMsgSetRequest request = qbSession.CreateRequestSet();
             IAccountQuery accountQuery = request.AppendAccountQueryRq();
             IMsgSetResponse response = qbSession.SendRequest(request);
             CheckForError(response, "Getting Bank Account");
             IAccountRet accountRet = (IAccountRet)response.ResponseList.GetAt(0).Detail;
-            return (accountRet.ListID.GetValue(),accountRet.FullName.GetValue());
+            return (accountRet.ListID.GetValue(), accountRet.FullName.GetValue());
         }
         private string AddVendor(QuickBooksSession qbSession, string vendorName)
         {
